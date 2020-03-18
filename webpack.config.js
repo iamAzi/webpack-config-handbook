@@ -5,14 +5,18 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 
 module.exports = {
-    entry: ['webpack-hot-middleware/client?noInfo=true&reload=true', './src/index.js'],
+    entry: {
+        index: ['webpack-hot-middleware/client?noInfo=true&reload=true', './src/index.js'],
+        pageA: ['webpack-hot-middleware/client?noInfo=true&reload=true', './src/pages/page-a/index.js'],
+        pageB: ['webpack-hot-middleware/client?noInfo=true&reload=true', './src/pages/page-b/index.js']
+    },
     output: {
-        filename: 'boundle.js',
+        filename: '[name].js',
         path: path.resolve(__dirname, 'dist'),
         publicPath: ''
     },
     mode: 'development',
-    devtool: 'cheap-source-map',
+    // devtool: 'cheap-source-map',
     module: {
         rules: [
             {
@@ -26,7 +30,8 @@ module.exports = {
                 use: [
                     'style-loader',
                     'css-loader',
-                    'sass-loader'
+                    'sass-loader',
+                    'postcss-loader'
                 ]
             },
             {
@@ -48,10 +53,32 @@ module.exports = {
         new FriendlyErrorsPlugin(),
         new HtmlWebpackPlugin({
             filename: 'index.html',
-            template: './src/static/index.html'
+            template: './src/static/index.html',
+            chunks: 'index'
+        }),
+        new HtmlWebpackPlugin({
+            filename: 'pageA.html',
+            template: './src/static/index.html',
+            chunks: 'pageA'
+        }),
+        new HtmlWebpackPlugin({
+            filename: 'pageB.html',
+            template: './src/static/index.html',
+            chunks: 'pageB'
         }),
         new webpack.HotModuleReplacementPlugin(),
     ],
+    optimization: {
+        splitChunks: {
+            cacheGroups: {
+                commons: {
+                    test: /(react|react-dom)/,
+                    name: 'vendors',
+                    chunks: 'all'
+                }
+            }
+        }
+    },
     stats: {
         modules: false,
         children: false,

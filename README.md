@@ -188,7 +188,170 @@ app.use(hotMiddleware);
 
 从配置中也可以看到，它的实现方式是向chunk注入一段监听代码，当chunk内容发生改变的时候，就通过websocket通知服务器，触发服务器刷新。
 
+### Autoprefixer
 
+autoprefixer是postcss的一个插件。
+
+使用它，我们就需要在处理css的时候加上一个`postcss-loader`
+
+postcss本身功能很强大，可以对CSS文件做一些预处理工作，这里使用单独的配置文件来配置它。
+
+> postcss.config.js
+
+```js
+module.exports = {
+    "plugins": [
+      require('autoprefixer')({
+        overrideBrowserslist: [
+          "> 1%",
+          "last 2 versions",
+          "not ie <= 8"
+        ]
+      })
+    ]
+  }
+  
+```
+
+然后再添加loader：
+
+> webpack.config.js
+
+```js
+module.exports = {
+    ...
+    module: {
+        rules: [
+            ...
+            {
+                test: /\.scss$/,
+                use: [
+                    'style-loader',
+                    'css-loader',
+                    'sass-loader',
+                    'postcss-loader'
+                ]
+            },
+        ]
+    }
+}
+```
+
+这样，我们就可以在代码中放心的使用flex之类的属性，而浏览器前缀交给webpack就好了。
+
+### 输出简化
+
+当前webpack构建或者热更新过程中会在控制台打印出非常多的信息，这些信息可能并不必要。
+
+优化主要是通过以下手段：
+
+- 通过`FriendlyErrorsPlugin`这个插件，可以打印出诸如构建时间，构建结果之类的重要信息。
+
+- 通过对`stats`的配置，可以去掉webpack原生的一些打印内容。
+
+> webpack.config.js
+
+```js
+const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
+
+module.exports = {
+    ...
+    plugins: [
+        ...
+        new FriendlyErrorsPlugin(),
+    ],
+    stats: {
+        modules: false,
+        children: false,
+        chunks: false,
+        chunkModules: false
+    }
+}
+```
+
+此外，开发环境中的打印信息，我们需要在server.js中，通过对中间件的配置来实现简化。
+
+> server.js
+
+```js
+const devMiddleware = webpackDevMiddleware(compiler, {
+    stats: 'errors-only',
+    quiet: true,
+})
+
+const hotMiddleware = webpackHotMiddleware(compiler, {
+    quiet: true,
+    log: false,
+})
+```
+
+注意，`devMiddleware`的`stats`参数和`webpack.config.js`中的stats是相同的逻辑。
+
+### 代码分离
+
+目前我们没有做代码分离，导致的结果是像react这样比较大的包会被打包到bundle.js中。可能本身文件不大，但是react却很大。
+
+对多页面应用来说，势必会造成每个chunk都很大，大家都用了react，而大家都打包了react。此时将react分离出来，作为一个公共的部分，让每个chunk单独引用它成为了一种必要。
+
+webpack4中代码分离的操作并不复杂：
+
+> webpack.config.js
+
+```js
+module.exports = {
+    ...
+    optimization: {
+        splitChunks: {
+            cacheGroups: {
+                commons: {
+                    test: /(react|react-dom)/,
+                    name: 'vendors',
+                    chunks: 'all'
+                }
+            }
+        }
+    },
+}
+```
+
+如上配置就可以将react和react-dom分离到单独的vendors文件中。
+
+
+
+为了更好的查看这一效果，最好将测试代码改造一下，entry中设置多个chunks，HtmlWebpackPlugin也需要配置多份（模拟多页应用的状态）
+
+
+
+这样打包出来可以看到非常明显的差别：
+
+- split前
+
+```
+                                      Asset       Size  Chunks             Chunk Names
+images/54eca180581672b44b6d4adaa66ef09e.png   60.5 KiB          [emitted]
+                                 index.html  390 bytes          [emitted]
+                                   index.js    974 KiB   index  [emitted]  index
+                                 pageA.html  390 bytes          [emitted]
+                                   pageA.js    215 KiB   pageA  [emitted]  pageA
+                                 pageB.html  390 bytes          [emitted]
+                                   pageB.js    199 KiB   pageB  [emitted]  pageB
+```
+
+
+
+- split后
+
+```js
+                                      Asset       Size   Chunks             Chunk Names
+images/54eca180581672b44b6d4adaa66ef09e.png   60.5 KiB           [emitted]
+                                 index.html  447 bytes           [emitted]
+                                   index.js    197 KiB    index  [emitted]  index
+                                 pageA.html  447 bytes           [emitted]
+                                   pageA.js    149 KiB    pageA  [emitted]  pageA
+                                 pageB.html  447 bytes           [emitted]
+                                   pageB.js    134 KiB    pageB  [emitted]  pageB
+                                 vendors.js    780 KiB  vendors  [emitted]  vendors
+```
 
 
 
