@@ -54,8 +54,8 @@ module.exports = {
     ],
     stats: {
         modules: false,
-      children: false,
-      chunks: false,
-      chunkModules: false
+        children: false,
+        chunks: false,
+        chunkModules: false
     }
 }
