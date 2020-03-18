@@ -36,6 +36,7 @@
     "friendly-errors-webpack-plugin": "^1.7.0",
     "html-webpack-plugin": "^3.2.0",
     "ip": "^1.1.5",
+    "mini-css-extract-plugin": "^0.9.0",
     "node-sass": "^4.13.1",
     "open": "^7.0.3",
     "opn": "^6.0.0",
