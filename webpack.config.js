@@ -3,6 +3,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCSSExtractPlugin = require('mini-css-extract-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const webpack = require('webpack');
 
 module.exports = {
@@ -42,6 +43,7 @@ module.exports = {
                     {
                         loader: 'url-loader',
                         options: {
+                            name: '[name].[ext]',
                             outputPath: 'images',
                             limit: 8192
                         }
@@ -72,14 +74,33 @@ module.exports = {
             chunks: 'pageB'
         }),
         new webpack.HotModuleReplacementPlugin(),
+        new BundleAnalyzerPlugin(),
     ],
     optimization: {
+        // runtimeChunk: {
+        //     name: 'runtime'
+        // },
         splitChunks: {
             cacheGroups: {
-                commons: {
-                    test: /(react|react-dom)/,
+                vendors: {
                     name: 'vendors',
-                    chunks: 'all'
+                    chunks: 'all',
+                    test: /[\\/]node_modules[\\/]/,
+                    priority: 80,
+                },
+                reacts: {
+                    test: /(react|react-dom)/,
+                    name: 'reacts',
+                    chunks: 'all',
+                    priority: 100,
+                },
+                default: {
+                    name: 'default',
+                    test: /\.js/,
+                    chunks: 'all',
+                    minSize: 1,
+                    minChunks: 2,
+                    priority: 60,
                 }
             }
         }

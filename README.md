@@ -39,6 +39,7 @@ module.exports = {
                         loader: 'url-loader',
                         options: {
                             outputPath: 'images',
+                            name: '[name].[ext]',
                             limit: 8192
                         }
                     }
@@ -287,7 +288,31 @@ const hotMiddleware = webpackHotMiddleware(compiler, {
 
 注意，`devMiddleware`的`stats`参数和`webpack.config.js`中的stats是相同的逻辑。
 
+### 打包分析
+
+借助`BundleAnalyzerPlugin`可以看到对打包结果的分析。
+
+这一工具的可视化做得很好，有利于我们在后面做代码分离时查看配置效果。
+
+> webpack.config.js
+
+```js
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+
+module.exports = {
+    ...
+    plugins: [
+    	...
+    	new BundleAnalyzerPlugin(),
+    ]
+}
+```
+
+打包完成之后，会在8888端口起一个服务，展示构建结果中各个模块的组成和大小。
+
 ### 代码分离
+
+#### 分离react试试
 
 目前我们没有做代码分离，导致的结果是像react这样比较大的包会被打包到bundle.js中。可能本身文件不大，但是react却很大。
 
@@ -328,7 +353,7 @@ module.exports = {
 
 ```
                                       Asset       Size  Chunks             Chunk Names
-images/54eca180581672b44b6d4adaa66ef09e.png   60.5 KiB          [emitted]
+							images/icon.png   60.5 KiB          [emitted]
                                  index.html  390 bytes          [emitted]
                                    index.js    974 KiB   index  [emitted]  index
                                  pageA.html  390 bytes          [emitted]
@@ -343,7 +368,7 @@ images/54eca180581672b44b6d4adaa66ef09e.png   60.5 KiB          [emitted]
 
 ```js
                                       Asset       Size   Chunks             Chunk Names
-images/54eca180581672b44b6d4adaa66ef09e.png   60.5 KiB           [emitted]
+							images/icon.png   60.5 KiB           [emitted]
                                  index.html  447 bytes           [emitted]
                                    index.js    197 KiB    index  [emitted]  index
                                  pageA.html  447 bytes           [emitted]
@@ -353,5 +378,81 @@ images/54eca180581672b44b6d4adaa66ef09e.png   60.5 KiB           [emitted]
                                  vendors.js    780 KiB  vendors  [emitted]  vendors
 ```
 
+#### SplitChunks
 
+代码分离的关键点就在于splitChunks的配置（它实际上是在配置`SplitChunksPlugin`插件）。
+
+它的作用总结来说就是：将待打包的chunks中公共的部分抽离出来，成为单独的共用chunk。
+
+前一步我们做到了抽离react和react-dom，实际开发中我们还有其他可抽离的部分，如：
+
+- node_modules
+- 公共方法
+
+通过SplitChunks就可以将它们都分离出来。
+
+```js
+        ...
+		splitChunks: {
+            cacheGroups: {
+                vendors: {
+                    name: 'vendors',
+                    chunks: 'all',
+                    test: /[\\/]node_modules[\\/]/,
+                    priority: 80,
+                },
+                reacts: {
+                    test: /(react|react-dom)/,
+                    name: 'reacts',
+                    chunks: 'all',
+                    priority: 100,
+                },
+                default: {
+                    name: 'default',
+                    test: /\.js/,
+                    chunks: 'all',
+                    minSize: 1,
+                    minChunks: 2,
+                    priority: 60,
+                }
+            }
+        }
+```
+
+以上配置就做到了
+
+1. 先将react和react-dom组成一个chunk（cacheGroups中的key就是chunk名），然后提取出来成reacts.js。
+2. 将node_modules中其他的部分组成一个chunk，提取成vendors.js。
+3. 将所有后缀名为js的文件中，至少被2个chunk引用的，最小为1B的包提取出来变成default.js。
+
+> 这里需要注意下chunks: 'all' 的配置，如果使用默认值async可能无法达到想要的效果。
+
+
+
+往工程中安装一个新的包，并在页面中引用它，供测试使用
+
+```
+npm i -D moment
+```
+
+以上的配置会将文件最终打包成：
+
+```
+          Asset       Size   Chunks             Chunk Names
+     default.js   9.82 KiB  default  [emitted]  default
+images/icon.png   60.5 KiB           [emitted]  
+      index.css  126 bytes    index  [emitted]  index
+     index.html  680 bytes           [emitted]  
+       index.js   56.2 KiB    index  [emitted]  index
+      pageA.css   96 bytes    pageA  [emitted]  pageA
+     pageA.html  680 bytes           [emitted]  
+       pageA.js   51.6 KiB    pageA  [emitted]  pageA
+      pageB.css   30 bytes    pageB  [emitted]  pageB
+     pageB.html  680 bytes           [emitted]  
+       pageB.js   51.1 KiB    pageB  [emitted]  pageB
+      reacts.js    780 KiB   reacts  [emitted]  reacts
+     vendors.js    688 KiB  vendors  [emitted]  vendors
+```
+
+可以看到跟前面只打包react/react-dom相比，页面的js体积更小了
 
