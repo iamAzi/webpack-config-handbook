@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import Util from '../../utils/util';
 import Net from '../../utils/net';
 import moment from 'moment';
@@ -12,3 +13,4 @@ export default class Index extends React.Component {
         )
     }
 }
+ReactDOM.render(<Index />, document.getElementById('root'))

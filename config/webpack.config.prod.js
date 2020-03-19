@@ -5,20 +5,45 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCSSExtractPlugin = require('mini-css-extract-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const webpack = require('webpack');
+const merge = require('webpack-merge');
+const glob = require('glob');
 
-module.exports = {
-    entry: {
-        index: ['webpack-hot-middleware/client?noInfo=true&reload=true', './src/index.js'],
-        pageA: ['webpack-hot-middleware/client?noInfo=true&reload=true', './src/pages/page-a/index.js'],
-        pageB: ['webpack-hot-middleware/client?noInfo=true&reload=true', './src/pages/page-b/index.js']
-    },
+const baseConfig = require('./webpack.config.base');
+
+const getEntryAndHtml = () => {
+    const filePath = glob.sync(path.join(__dirname, '../src/pages/**/*.js'))
+
+    let entrys = {};
+    let htmlPlugins = [];
+
+    filePath.forEach(item => {
+        const match = item.match(/pages\/(.+)\/index\.js$/);
+        const name = match && match[1];
+
+        entrys[name] = ['webpack-hot-middleware/client?noInfo=true&reload=true', item];
+        htmlPlugins.push(new HtmlWebpackPlugin({
+            filename: `${name}.html`,
+            template: path.join(__dirname, '../src/static/index.html'),
+            chunks: name
+        }))
+    })
+
+    return {
+        entrys,
+        htmlPlugins,
+    }
+}
+
+const { entrys, htmlPlugins } = getEntryAndHtml();
+
+module.exports = merge(baseConfig, {
+    entry: entrys,
     output: {
         filename: '[name].js',
         path: path.resolve(__dirname, 'dist'),
         publicPath: ''
     },
-    mode: 'development',
-    // devtool: 'cheap-source-map',
+    mode: 'production',
     module: {
         rules: [
             {
@@ -53,28 +78,7 @@ module.exports = {
         ]
     },
     plugins: [
-        new CleanWebpackPlugin(),
-        new FriendlyErrorsPlugin(),
-        new MiniCSSExtractPlugin({
-            filename: '[name].css'
-        }),
-        new HtmlWebpackPlugin({
-            filename: 'index.html',
-            template: './src/static/index.html',
-            chunks: 'index'
-        }),
-        new HtmlWebpackPlugin({
-            filename: 'pageA.html',
-            template: './src/static/index.html',
-            chunks: 'pageA'
-        }),
-        new HtmlWebpackPlugin({
-            filename: 'pageB.html',
-            template: './src/static/index.html',
-            chunks: 'pageB'
-        }),
-        new webpack.HotModuleReplacementPlugin(),
-        new BundleAnalyzerPlugin(),
+        ...htmlPlugins,
     ],
     optimization: {
         runtimeChunk: {
@@ -105,10 +109,4 @@ module.exports = {
             }
         }
     },
-    stats: {
-        modules: false,
-        children: false,
-        chunks: false,
-        chunkModules: false
-    }
-}
+})

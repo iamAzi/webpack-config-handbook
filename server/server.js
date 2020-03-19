@@ -8,7 +8,7 @@ const webpackDevMiddleware = require('webpack-dev-middleware');
 const webpackHotMiddleware = require('webpack-hot-middleware');
 
 const app = express();
-const config = require('../webpack.config');
+const config = require('../config/webpack.config.dev');
 const compiler = webpack(config);
 
 const devMiddleware = webpackDevMiddleware(compiler, {
@@ -28,7 +28,7 @@ portfinder.basePort = 3000
 
 portfinder.getPortPromise().then((port) => {
     app.listen(port, () => {
-        const url = `http://${ip.address()}:${port}`
+        const url = `http://${ip.address()}:${port}/page-a.html`
         // open(url)
         console.log(`Webpack Server: ${url}`)
     })
