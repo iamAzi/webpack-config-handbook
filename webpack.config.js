@@ -77,9 +77,9 @@ module.exports = {
         new BundleAnalyzerPlugin(),
     ],
     optimization: {
-        // runtimeChunk: {
-        //     name: 'runtime'
-        // },
+        runtimeChunk: {
+            name: 'manifest'
+        },
         splitChunks: {
             cacheGroups: {
                 vendors: {

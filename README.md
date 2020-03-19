@@ -456,3 +456,55 @@ images/icon.png   60.5 KiB           [emitted]
 
 可以看到跟前面只打包react/react-dom相比，页面的js体积更小了
 
+如果在上一步安装了BundleAnalyzer插件，能够看的很明显。
+
+#### Runtime和Manifest
+
+在使用 webpack 构建的典型应用程序或站点中，有三种主要的代码类型：
+
+1. 你或你的团队编写的源码。
+2. 你的源码会依赖的任何第三方的 library 或 "vendor" 代码。
+3. webpack 的 runtime 和 *manifest*，管理所有模块的交互。
+
+runtime 和 manifest 数据，主要是指：在浏览器运行时，webpack 用来连接模块化的应用程序的所有代码。
+
+runtime 包含了在模块交互时，连接模块所需的加载和解析逻辑。包括浏览器中的已加载模块的连接，以及懒加载模块的执行逻辑。
+
+通过使用 manifest 中的数据，runtime 将能够查询模块标识符，检索出背后对应的模块。
+
+这里通过runtimeChunks配置我们可以将这部分也抽离出来：
+
+> webpack.config.js
+
+```js
+module.exports = {
+    //...
+    optimization: {
+        runtimeChunk: {
+            name: 'manifest'
+        }
+    }
+}
+```
+
+这个时候再看打包结果
+
+```
+         Asset       Size    Chunks             Chunk Names
+     default.js   9.82 KiB   default  [emitted]  default
+images/icon.png   60.5 KiB            [emitted]  
+      index.css  126 bytes     index  [emitted]  index
+     index.html  738 bytes            [emitted]  
+       index.js   25.1 KiB     index  [emitted]  index
+    manifest.js   31.1 KiB  manifest  [emitted]  manifest
+      pageA.css   96 bytes     pageA  [emitted]  pageA
+     pageA.html  738 bytes            [emitted]  
+       pageA.js   20.5 KiB     pageA  [emitted]  pageA
+      pageB.css   30 bytes     pageB  [emitted]  pageB
+     pageB.html  738 bytes            [emitted]  
+       pageB.js     20 KiB     pageB  [emitted]  pageB
+      reacts.js    780 KiB    reacts  [emitted]  reacts
+     vendors.js    688 KiB   vendors  [emitted]  vendors
+```
+
+可以发现pageA，pageB，index都进一步变小了，同时一个manifest包被抽了出来。
