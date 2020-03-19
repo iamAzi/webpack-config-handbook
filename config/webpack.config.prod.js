@@ -1,10 +1,6 @@
 const path = require('path');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCSSExtractPlugin = require('mini-css-extract-plugin');
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-const webpack = require('webpack');
 const merge = require('webpack-merge');
 const glob = require('glob');
 
@@ -24,7 +20,8 @@ const getEntryAndHtml = () => {
         htmlPlugins.push(new HtmlWebpackPlugin({
             filename: `${name}.html`,
             template: path.join(__dirname, '../src/static/index.html'),
-            chunks: name
+            chunks: [name, 'vendors', 'reacts', 'default', 'manifest'],
+            inject: true,
         }))
     })
 

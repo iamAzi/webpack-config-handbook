@@ -508,3 +508,331 @@ images/icon.png   60.5 KiB            [emitted]
 ```
 
 可以发现pageA，pageB，index都进一步变小了，同时一个manifest包被抽了出来。
+
+### 动态化的入口
+
+如果不是SPA应用，我们的应用会有很多个同级别的页面入口，之前的配置中每更新一个入口都要去entry和HtmlWebpackPlugin中添加。现在改成自动匹配并添加的方式：
+
+```js
+const getEntryAndHtml = () => {
+    const filePath = glob.sync(path.join(__dirname, '../src/pages/**/*.js'))
+
+    let entrys = {};
+    let htmlPlugins = [];
+
+    filePath.forEach(item => {
+        const match = item.match(/pages\/(.+)\/index\.js$/);
+        const name = match && match[1];
+
+        entrys[name] = ['webpack-hot-middleware/client?noInfo=true&reload=true', item];
+        htmlPlugins.push(
+            new HtmlWebpackPlugin({
+                filename: `${name}.html`,
+                template: path.join(__dirname, '../src/static/index.html'),
+                chunks: [name, 'vendors', 'reacts', 'default', 'manifest'],
+                inject: true,
+            })
+        )
+    })
+
+    return {
+        entrys,
+        htmlPlugins,
+    }
+}
+
+const { entrys, htmlPlugins } = getEntryAndHtml();
+
+module.exports = {
+    entry: entrys,
+    plugins: [
+        ...htmlPlugins,
+    ]
+}
+```
+
+这样就会自动匹配src/pages目录下面不同页面的index.js文件了
+
+其中需要注意：
+
+- HtmlWebpackPlugin中的chunks是一个数组对象，它的配置要根据SplitChunks来设置。这里的设置决定了Html中会有哪些Chunk被引入进来。漏掉一个或者多了一个是必然会影响页面实际输出的。
+
+
+
+### 分离config
+
+实际开发中我们会遇到不同的开发环境，不同的环境对webpack打包的需求也不一样，所以这里将之前的`webpack.config.js`拆分成三个文件：
+
+> webpack.config.base.js
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const MiniCSSExtractPlugin = require('mini-css-extract-plugin');
+
+module.exports = {
+    output: {
+        filename: '[name].js',
+        path: path.resolve(__dirname, '../dist'),
+        publicPath: ''
+    },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new MiniCSSExtractPlugin({
+            filename: '[name].css'
+        }),
+    ],
+    stats: {
+        modules: false,
+        children: false,
+        chunks: false,
+        chunkModules: false
+    }
+}
+```
+
+> webpack.config.dev.js
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCSSExtractPlugin = require('mini-css-extract-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const webpack = require('webpack');
+const merge = require('webpack-merge');
+const glob = require('glob');
+
+const baseConfig = require('./webpack.config.base');
+
+const getEntryAndHtml = () => {
+    const filePath = glob.sync(path.join(__dirname, '../src/pages/**/*.js'))
+
+    let entrys = {};
+    let htmlPlugins = [];
+
+    filePath.forEach(item => {
+        const match = item.match(/pages\/(.+)\/index\.js$/);
+        const name = match && match[1];
+
+        entrys[name] = ['webpack-hot-middleware/client?noInfo=true&reload=true', item];
+        htmlPlugins.push(
+            new HtmlWebpackPlugin({
+                filename: `${name}.html`,
+                template: path.join(__dirname, '../src/static/index.html'),
+                chunks: [name, 'vendors', 'reacts', 'default', 'manifest'],
+                inject: true,
+            })
+        )
+    })
+
+    return {
+        entrys,
+        htmlPlugins,
+    }
+}
+
+const { entrys, htmlPlugins } = getEntryAndHtml();
+
+module.exports = merge(baseConfig, {
+    entry: entrys,
+    mode: 'development',
+    devtool: 'cheap-source-map',
+    module: {
+        rules: [
+            {
+                test: /\.jsx?$/,
+                use: [
+                    'babel-loader'
+                ]
+            },
+            {
+                test: /\.scss$/,
+                use: [
+                    // 'style-loader',
+                    MiniCSSExtractPlugin.loader,
+                    'css-loader',
+                    'sass-loader',
+                    'postcss-loader'
+                ]
+            },
+            {
+                test: /\.(png||jpg|gif)$/,
+                use: [
+                    {
+                        loader: 'url-loader',
+                        options: {
+                            name: '[name].[ext]',
+                            outputPath: 'images',
+                            limit: 8192
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    plugins: [
+        new webpack.HotModuleReplacementPlugin(),
+        new BundleAnalyzerPlugin(),
+        new FriendlyErrorsPlugin(),
+        ...htmlPlugins,
+    ],
+    optimization: {
+        runtimeChunk: {
+            name: 'manifest'
+        },
+        splitChunks: {
+            cacheGroups: {
+                vendors: {
+                    name: 'vendors',
+                    chunks: 'all',
+                    test: /[\\/]node_modules[\\/]/,
+                    priority: 80,
+                },
+                reacts: {
+                    test: /(react|react-dom)/,
+                    name: 'reacts',
+                    chunks: 'all',
+                    priority: 100,
+                },
+                default: {
+                    name: 'default',
+                    test: /\.js/,
+                    chunks: 'all',
+                    minSize: 1,
+                    minChunks: 2,
+                    priority: 60,
+                }
+            }
+        }
+    },
+})
+```
+
+> webpack.config.prod.js
+
+```js
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCSSExtractPlugin = require('mini-css-extract-plugin');
+const merge = require('webpack-merge');
+const glob = require('glob');
+
+const baseConfig = require('./webpack.config.base');
+
+const getEntryAndHtml = () => {
+    const filePath = glob.sync(path.join(__dirname, '../src/pages/**/*.js'))
+
+    let entrys = {};
+    let htmlPlugins = [];
+
+    filePath.forEach(item => {
+        const match = item.match(/pages\/(.+)\/index\.js$/);
+        const name = match && match[1];
+
+        entrys[name] = ['webpack-hot-middleware/client?noInfo=true&reload=true', item];
+        htmlPlugins.push(new HtmlWebpackPlugin({
+            filename: `${name}.html`,
+            template: path.join(__dirname, '../src/static/index.html'),
+            chunks: [name, 'vendors', 'reacts', 'default', 'manifest'],
+            inject: true,
+        }))
+    })
+
+    return {
+        entrys,
+        htmlPlugins,
+    }
+}
+
+const { entrys, htmlPlugins } = getEntryAndHtml();
+
+module.exports = merge(baseConfig, {
+    entry: entrys,
+    output: {
+        filename: '[name].js',
+        path: path.resolve(__dirname, 'dist'),
+        publicPath: ''
+    },
+    mode: 'production',
+    module: {
+        rules: [
+            {
+                test: /\.jsx?$/,
+                use: [
+                    'babel-loader'
+                ]
+            },
+            {
+                test: /\.scss$/,
+                use: [
+                    // 'style-loader',
+                    MiniCSSExtractPlugin.loader,
+                    'css-loader',
+                    'sass-loader',
+                    'postcss-loader'
+                ]
+            },
+            {
+                test: /\.(png||jpg|gif)$/,
+                use: [
+                    {
+                        loader: 'url-loader',
+                        options: {
+                            name: '[name].[ext]',
+                            outputPath: 'images',
+                            limit: 8192
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    plugins: [
+        ...htmlPlugins,
+    ],
+    optimization: {
+        runtimeChunk: {
+            name: 'manifest'
+        },
+        splitChunks: {
+            cacheGroups: {
+                vendors: {
+                    name: 'vendors',
+                    chunks: 'all',
+                    test: /[\\/]node_modules[\\/]/,
+                    priority: 80,
+                },
+                reacts: {
+                    test: /(react|react-dom)/,
+                    name: 'reacts',
+                    chunks: 'all',
+                    priority: 100,
+                },
+                default: {
+                    name: 'default',
+                    test: /\.js/,
+                    chunks: 'all',
+                    minSize: 1,
+                    minChunks: 2,
+                    priority: 60,
+                }
+            }
+        }
+    },
+})
+```
+
+这里实际上就是将之前的config拆分到了三个config中。
+
+这里还用到了webpack-merge，来完成webpack-config的合并操作。
+
+然后根据dev和prod环境需求的不同做了一些区别化的配置。
+
+修改了config以后，server和package.json中的路径也需要响应修改，这里不做赘述。
+
+这一步只是先将配置项分开，方便接下来进行优化之类的配置。
+
+
+

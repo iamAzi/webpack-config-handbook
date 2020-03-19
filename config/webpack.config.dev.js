@@ -79,6 +79,7 @@ module.exports = merge(baseConfig, {
     plugins: [
         new webpack.HotModuleReplacementPlugin(),
         new BundleAnalyzerPlugin(),
+        new FriendlyErrorsPlugin(),
         ...htmlPlugins,
     ],
     optimization: {
