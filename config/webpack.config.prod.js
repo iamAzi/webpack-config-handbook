@@ -60,7 +60,7 @@ module.exports = merge(baseConfig, {
                 ]
             },
             {
-                test: /\.(png||jpg|gif)$/,
+                test: /\.(png|jpg|gif)$/,
                 use: [
                     {
                         loader: 'url-loader',
