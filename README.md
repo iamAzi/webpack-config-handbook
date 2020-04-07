@@ -1,3 +1,82 @@
+## Base Directory
+
+### 基础内容
+#### entry
+
+#### output
+
+#### loaders
+
+#### plugins
+
+#### mode
+
+#### 解析ES6和JSX
+
+#### 解析CSS、LESS、SASS
+
+#### 解析图片和字体
+
+#### 文件监听
+
+#### 热更新
+
+#### 文件hash策略
+
+#### 代码压缩
+
+### 进阶内容
+
+#### 清理构建目录
+
+#### PostCss
+
+#### px2rem
+
+#### 静态资源内联
+
+#### sourceMap
+
+#### 提取页面公共资源
+
+#### Tree Shaking
+
+#### Scope Hoisting
+
+#### 代码分割和动态加载
+
+#### ESlint
+
+#### 打包组件和基础库
+
+#### 优化日志
+
+### 优化配置
+
+#### stats
+
+#### speed-measure-webpack-plugin
+
+#### webpack-bundle-analyzer
+
+#### 多进程多实例构建
+
+#### 多进程压缩代码
+
+#### 预编译资源模块
+
+#### 打包缓存
+
+#### 缩小构建目标
+
+#### Tree Shaking
+
+#### 图片压缩
+
+#### 动态Polyfill
+
+
+
 ## Get start
 
 ### 最基础的版本
