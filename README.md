@@ -208,6 +208,52 @@ mode有三种可选项：
 
 #### 解析ES6和JSX
 
+webpack本身没法识别ES6和React JSX语法，这就需要我们用专门的loader来处理源文件。
+
+Babel就是用来做这件事情的。
+
+官网介绍：
+
+> Babel 是一个工具链，主要用于将 ECMAScript 2015+ 版本的代码转换为向后兼容的 JavaScript 语法，以便能够运行在当前和旧版本的浏览器或其他环境中。下面列出的是 Babel 能为你做的事情：
+
+> - 语法转换
+> - 通过 Polyfill 方式在目标环境中添加缺失的特性 (通过 @babel/polyfill 模块)
+> - 源码转换 (codemods)
+
+说白了，Babel本身就是一个提供Js语法转换的工具，它又针对webpack提供了一个专门的`babel-loader`。
+
+前面提到过，loader的配置项可以写在webpack配置文件中，也可以作为配置文件独立处理。对于babel，通常都是独立处理的。
+
+babel配置文件命名为`.babelrc`。
+
+最常用的配置项是预设（presets），即官方提供的语法转换方案。不同的预设可以识别不同的Js语法。
+
+官方针对常用环境编写了一些 preset：
+
+- @babel/preset-env
+- @babel/preset-flow
+- @babel/preset-react
+- @babel/preset-typescript
+
+具体关于babel的内容可以去参考官方文档，此处不再详述。
+
+典型配置：
+
+```js
+// .webpack.config.js
+{
+    test: /\.jsx?$/,
+    use: [
+        'babel-loader'
+    ]
+},
+
+// .babelrc
+{
+    "presets": ["@babel/env", "@babel/preset-react"]
+}
+```
+
 #### 解析CSS、LESS、SASS
 
 #### 解析图片和字体
