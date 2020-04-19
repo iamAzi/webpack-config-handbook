@@ -479,6 +479,45 @@ app.listen(3000, () => {
 
 #### 文件hash策略
 
+hash指纹存在主要是为了做文件版本管理和缓存管理。
+
+- `hash` 关联整个项目的构建，只要项目中文件有修改，hash值就会变化。
+
+- `chunkhash` 关联文件当前所属的chunk，同chunk中的文件变化时，chunkhash会变化。**通常用在js中。**
+- `contenthash` 关联当前文件内容，当文件内容不变时，contenthash不变。**通常用在CSS中**，屏蔽js变化导致的hash变化。
+
+另外，还需要注意`file-loader`中的hash。它的占位符`[hash]`特指文件内容的hash，默认是`md5`生成。
+
+```js
+...
+output: {
+    path: path.join(__dirname, 'dist'),
+    filename: '[name]_[chunkhash:8].js'    // js文件指纹
+}
+...
+module: {
+    rules: [
+        ...
+        {
+            test: /\.(png|jpg|gif)$/,
+            use: [
+                {
+                    loader: 'file-loader',
+                    options: {
+                        name: '[name]_[hash:8][ext]'   // 图片文件指纹
+                    }
+                }
+            ]
+        }
+    ]
+},
+plugins: [
+    new MiniCssExtractPlugin({
+        filename: '[name]_[contenthash:8].css'    // CSS文件指纹
+    })
+]
+```
+
 
 
 #### 代码压缩
