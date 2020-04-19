@@ -518,15 +518,93 @@ plugins: [
 ]
 ```
 
-
-
 #### 代码压缩
+
+##### 压缩JavaScript
+
+webpack4中内置了`uglifyjs-webpack-plugin` 
+
+##### 压缩CSS
+
+通常可以用`optimize-css-assets-webpack-plugin` + `cssnano`。
+
+`cssnano`原本用在postcss中的一个工具，所以其实也可以直接在postcss的配置文件中设置CSS压缩：
+
+```js
+// postcss.config.js
+module.exports = {
+    plugins: [
+        require('cssnano')({
+            preset: 'default',
+        }),
+    ],
+};
+```
+
+##### 压缩HTML
+
+单页应用可借助`html-webpack-plugin`
+
+> 典型配置
+
+```js
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+
+optimization: {
+    minimizer: [ // 用于配置 minimizers 和选项
+        new UglifyJsPlugin({
+            cache: true,
+            parallel: true,
+            sourceMap: true // set to true if you want JS source maps
+        }),
+        new OptimizeCSSAssetsPlugin({})
+    ]
+}，
+plugins: [
+    ...
+    new HtmlWebpackPlugin({
+        filename: 'index.html',// 输出文件的名称
+        template: path.resolve(__dirname, 'src/index.html'),// 模板文件的路径
+        title:'webpack-主页',// 配置生成页面的标题
+        minify:{
+            removeRedundantAttributes:true, // 删除多余的属性
+            collapseWhitespace:true, // 折叠空白区域
+            removeAttributeQuotes: true, // 移除属性的引号
+            removeComments: true, // 移除注释
+            collapseBooleanAttributes: true // 省略只有 boolean 值的属性值 例如：readonly checked
+        },
+        favicon:''
+    })
+    ...
+],
+```
 
 ### 进阶内容
 
 #### 清理构建目录
 
-#### PostCss
+使用[`CleanWebpackPlugin`](<https://github.com/johnagan/clean-webpack-plugin>)
+
+```js
+plugins: [
+    new CleanWebpackPlugin(),
+],
+```
+
+#### PostCSS
+
+是一个用 JavaScript 工具和插件转换 CSS 代码的工具。
+
+PostCSS与SASS不同，是一个预处理器，就像是CSS界的babel。
+
+常用功能：
+
+- `autoprefixer` 自动添加浏览器前缀
+- `stylelint` CSS编程检测和约定
+- 支持CSS Modules
+
+其中最常用的就是autoprefixer。具体在webpack中的配置方式后文中有。
 
 #### px2rem
 
