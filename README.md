@@ -390,9 +390,96 @@ module.exports = {
 
 #### 文件监听
 
+源码发生变化时，自动构建新的输出文件。
+
+- 启动webpack时，npm指令中带上`--watch`
+- 在webpack.config.js中设置watch: true
+
+缺点：需要手动刷新浏览器
+
+
+
+文件监听是通过轮询判断文件的最后编辑时间来实现的。
+
+webpack监听到一个文件变更以后，不会立刻触发更新，而是先缓存起来，等到一个aggregateTimeout到的时候再一起更新。
+
+配置项：
+
+```js
+watchOptions: {
+    ignored: /node_modules/,    // 不需要监听的目录
+    aggregateTimeout: 300,    // 监听到变化后到更新的间隔时间
+    poll: 1000,    // 轮询间隔时间
+}
+```
+
 #### 热更新
 
+热更新可以解决`watch`模式修改文件后还需要手动刷新浏览器的问题。
+
+实现热更新的基础方式是通过`webpack-dev-server` +` HotModuleReplacementPlugin`。
+
+webpack-dev-server会将打包后的文件保存在内存中，提高构建和访问的速度，然后在本地起一个服务。
+
+热更新的初级配置如下：
+
+```js
+...
+plugins: [
+    new webpack.HotModuleReplacementPlugin()
+],
+devServer: {
+    contentBase: './dist',
+	hot: true
+}
+...
+```
+
+在实际开发中，devServer提供的内容不一定能满足我们的服务需求，就需要我们在自己的本地Server中自己去做WDS的功能。
+
+这就需要用到`webpack-dev-middleware`。
+
+- `webpack-dev-middleware` 将文件输出到内存；watch文件的变化
+- `webpack-hot-middleware` 将它们推送给浏览器 [WHM详细介绍](<https://www.jianshu.com/p/bba6bc0a0739>)
+
+```js
+// 本地Server简单配置
+const express = require('express');
+const webpack = require('webpack');
+const webpackDevMiddleware = require('webpack-dev-middleware');
+const webpackHotMiddleware = require('webpack-hot-middleware');
+
+const app = express();
+const config = require('../webpack.config');
+
+const compiler = webpack(config);
+
+const devMiddleware = webpackDevMiddleware(compiler, {
+    quiet: true,
+})
+
+const hotMiddleware = webpackHotMiddleware(compiler);
+
+app.use(devMiddleware);
+app.use(hotMiddleware);
+
+app.listen(3000, () => {
+    const url = `http://${ip.address()}:${port}` 
+    console.log( `Webpack Server: ${url}` )
+})
+```
+
+> 具体的配置在后续专门的HMR章节中，这里不做赘述
+
+热更新的流程和原理：
+
+1. 启动时，webpack将文件打包成bundle，输出到Server中
+2. 文件更新时，webpack将文件更新通知到HMR Server
+3. HMR Server会将文件推送到浏览器端的HMR Runtime中，更新浏览器端的代码
+
 #### 文件hash策略
+
+
 
 #### 代码压缩
 
