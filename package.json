@@ -6,8 +6,9 @@
   "scripts": {
     "start": "webpack-dev-server --open",
     "dev": "node ./server/server.js",
-    "dev-build": "webpack --config ./config/webpack.config.dev.js",
-    "build": "webpack --config ./config/webpack.config.prod.js"
+    "build:dev": "webpack --config ./config/webpack.config.dev.js",
+    "build:prod": "webpack --config ./config/webpack.config.prod.js",
+    "build:dll": "webpack --config ./config/webpack.config.dll.js"
   },
   "repository": {
     "type": "git",
@@ -53,6 +54,7 @@
     "webpack-dev-middleware": "^3.7.2",
     "webpack-dev-server": "^3.10.3",
     "webpack-hot-middleware": "^2.25.0",
+    "webpack-manifest-plugin": "^2.2.0",
     "webpack-merge": "^4.2.2"
   },
   "dependencies": {
