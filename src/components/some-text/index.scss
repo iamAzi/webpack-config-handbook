@@ -1,0 +1,21 @@
+.some-text {
+    font-size: 30px;
+    .text-1 {
+        font-size: 28px;
+        color: lightslategray;
+    }
+    .image {
+        width: 100%;
+        height: 100%;
+    }
+    .text-1 .fallback {
+        height: 28px;
+        background-color: #eee;
+    }
+    .image .fallback {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background-color: #eee;
+    }
+}

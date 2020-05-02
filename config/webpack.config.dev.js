@@ -11,13 +11,13 @@ const glob = require('glob');
 const baseConfig = require('./webpack.config.base');
 
 const getEntryAndHtml = () => {
-    const filePath = glob.sync(path.join(__dirname, '../src/pages/**/*.js'))
+    const filePath = glob.sync(path.join(__dirname, '../src/pages/**/*.jsx'))
 
     let entrys = {};
     let htmlPlugins = [];
 
     filePath.forEach(item => {
-        const match = item.match(/pages\/(.+)\/index\.js$/);
+        const match = item.match(/pages\/(.+)\/index\.jsx?$/);
         const name = match && match[1];
 
         entrys[name] = ['webpack-hot-middleware/client?noInfo=true&reload=true', item];
@@ -42,7 +42,7 @@ const { entrys, htmlPlugins } = getEntryAndHtml();
 module.exports = merge(baseConfig, {
     entry: entrys,
     mode: 'development',
-    devtool: 'cheap-source-map',
+    // devtool: 'cheap-source-map',
     module: {
         rules: [
             {
@@ -78,7 +78,7 @@ module.exports = merge(baseConfig, {
     },
     plugins: [
         new webpack.HotModuleReplacementPlugin(),
-        new BundleAnalyzerPlugin(),
+        // new BundleAnalyzerPlugin(),
         new FriendlyErrorsPlugin(),
         ...htmlPlugins,
     ],

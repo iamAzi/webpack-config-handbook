@@ -1,11 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Webpack</title>
 </head>
+
 <body>
     <div id='root'></div>
+    <!-- <script>
+        if ('serviceWorker' in navigator) {
+            // 执行注册，注册的路由就是sw会监听请求的路由(这里就是/cachePath路径下)
+            navigator.serviceWorker.register('/sw.js').then(function (registration) {
+                console.log('sw is available')
+            }).catch(function (err) {
+
+            });
+        }
+    </script> -->
 </body>
+
 </html>
